@@ -2,6 +2,7 @@
 #include "GameUtil.h"
 #include "Asteroid.h"
 #include "BoundingShape.h"
+#include "Asteroids.h"
 
 Asteroid::Asteroid(void) : GameObject("Asteroid")
 {

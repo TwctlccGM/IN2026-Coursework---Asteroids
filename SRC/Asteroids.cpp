@@ -11,6 +11,9 @@
 #include "BoundingSphere.h"
 #include "GUILabel.h"
 #include "Explosion.h"
+#include <iostream>
+#include <string>
+#include <fstream>
 
 // PUBLIC INSTANCE CONSTRUCTORS ///////////////////////////////////////////////
 
@@ -59,7 +62,7 @@ void Asteroids::Start()
 	Animation *spaceship_anim = AnimationManager::GetInstance().CreateAnimationFromFile("spaceship", 128, 128, 128, 128, "spaceship_fs.png");
 
 	// Create a spaceship and add it to the world
-	mGameWorld->AddObject(CreateSpaceship());
+	//mGameWorld->AddObject(CreateSpaceship());
 	// Create some asteroids and add them to the world
 	CreateAsteroids(10);
 
@@ -84,13 +87,22 @@ void Asteroids::Stop()
 }
 
 // PUBLIC INSTANCE METHODS IMPLEMENTING IKeyboardListener /////////////////////
-
+// This variable is needed to stop spaceship duplication in 'OnKeyPressed'
+int startScreenVariable = 0;
 void Asteroids::OnKeyPressed(uchar key, int x, int y)
 {
 	switch (key)
 	{
 	case ' ':
 		mSpaceship->Shoot();
+		break;
+	case 'p':
+		if (startScreenVariable == 0)
+		{
+			mGameWorld->AddObject(CreateSpaceship());
+			mStartScreenLabel->SetVisible(false);
+			startScreenVariable = 1;
+		}
 		break;
 	default:
 		break;
@@ -170,6 +182,11 @@ void Asteroids::OnTimer(int value)
 		mGameOverLabel->SetVisible(true);
 	}
 
+	if (value == SHOW_START_SCREEN)
+	{
+		mStartScreenLabel->SetVisible(true);
+	}
+
 }
 
 // PROTECTED INSTANCE METHODS /////////////////////////////////////////////////
@@ -216,12 +233,23 @@ void Asteroids::CreateGUI()
 	mGameDisplay->GetContainer()->SetBorder(GLVector2i(10, 10));
 	// Create a new GUILabel and wrap it up in a shared_ptr
 	mScoreLabel = make_shared<GUILabel>("Score: 0");
+	//mStartScreen = make_shared<GUILabel>("Press P to play.");
 	// Set the vertical alignment of the label to GUI_VALIGN_TOP
 	mScoreLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
 	// Add the GUILabel to the GUIComponent  
 	shared_ptr<GUIComponent> score_component
 		= static_pointer_cast<GUIComponent>(mScoreLabel);
 	mGameDisplay->GetContainer()->AddComponent(score_component, GLVector2f(0.0f, 1.0f));
+	
+	// Create a new GUILabel and wrap it up in a shared_ptr
+	mHighScoreLabel = make_shared<GUILabel>("High Score: 0");
+	//mStartScreen = make_shared<GUILabel>("Press P to play.");
+	// Set the vertical alignment of the label to GUI_VALIGN_TOP
+	mHighScoreLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
+	// Add the GUILabel to the GUIComponent  
+	shared_ptr<GUIComponent> high_score_component
+		= static_pointer_cast<GUIComponent>(mHighScoreLabel);
+	mGameDisplay->GetContainer()->AddComponent(high_score_component, GLVector2f(0.6f, 1.0f));
 
 	// Create a new GUILabel and wrap it up in a shared_ptr
 	mLivesLabel = make_shared<GUILabel>("Lives: 3");
@@ -244,6 +272,35 @@ void Asteroids::CreateGUI()
 		= static_pointer_cast<GUIComponent>(mGameOverLabel);
 	mGameDisplay->GetContainer()->AddComponent(game_over_component, GLVector2f(0.5f, 0.5f));
 
+	// Create a new GUILabel and wrap it up in a shared_ptr
+	mStartScreenLabel = shared_ptr<GUILabel>(new GUILabel("Press P to start"));
+	// Set the horizontal alignment of the label to GUI_HALIGN_CENTER
+	mStartScreenLabel->SetHorizontalAlignment(GUIComponent::GUI_HALIGN_CENTER);
+	// Set the vertical alignment of the label to GUI_VALIGN_MIDDLE
+	mStartScreenLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_MIDDLE);
+	// Set the visibility of the label to true (visible)
+	mStartScreenLabel->SetVisible(true);
+	// Add the GUILabel to the GUIContainer  
+	shared_ptr<GUIComponent> start_screen_component
+		= static_pointer_cast<GUIComponent>(mStartScreenLabel);
+	mGameDisplay->GetContainer()->AddComponent(start_screen_component, GLVector2f(0.5f, 0.5f));
+
+}
+
+void OnHighScoreChanged(int high_score)
+{
+	// Create Highscore file
+	ofstream fw("highscore.txt", std::ofstream::out);
+	//check if file was successfully opened for writing
+	if (fw.is_open())
+	{
+		//store array contents to text file
+		for (int i = 0; i < 1; i++) {
+			fw << 1 << "\n";
+		}
+		fw.close();
+	}
+	else cout << "Problem with opening file";
 }
 
 void Asteroids::OnScoreChanged(int score)
@@ -254,6 +311,14 @@ void Asteroids::OnScoreChanged(int score)
 	// Get the score message as a string
 	std::string score_msg = msg_stream.str();
 	mScoreLabel->SetText(score_msg);
+
+	if (score > 0  /* this will be replaced by a variable representing the high score stored in the file */)
+	{
+		std::ostringstream msg_stream;
+		msg_stream << "High Score: " << score;
+		std::string high_score_msg = msg_stream.str();
+		mHighScoreLabel->SetText(high_score_msg);
+	}
 }
 
 void Asteroids::OnPlayerKilled(int lives_left)
