@@ -233,7 +233,6 @@ void Asteroids::CreateGUI()
 	mGameDisplay->GetContainer()->SetBorder(GLVector2i(10, 10));
 	// Create a new GUILabel and wrap it up in a shared_ptr
 	mScoreLabel = make_shared<GUILabel>("Score: 0");
-	//mStartScreen = make_shared<GUILabel>("Press P to play.");
 	// Set the vertical alignment of the label to GUI_VALIGN_TOP
 	mScoreLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
 	// Add the GUILabel to the GUIComponent  
@@ -242,14 +241,13 @@ void Asteroids::CreateGUI()
 	mGameDisplay->GetContainer()->AddComponent(score_component, GLVector2f(0.0f, 1.0f));
 	
 	// Create a new GUILabel and wrap it up in a shared_ptr
-	mHighScoreLabel = make_shared<GUILabel>("High Score: 0");
-	//mStartScreen = make_shared<GUILabel>("Press P to play.");
+	mHighScoreLabel = make_shared<GUILabel>("High Score: Loading");
 	// Set the vertical alignment of the label to GUI_VALIGN_TOP
 	mHighScoreLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
 	// Add the GUILabel to the GUIComponent  
 	shared_ptr<GUIComponent> high_score_component
 		= static_pointer_cast<GUIComponent>(mHighScoreLabel);
-	mGameDisplay->GetContainer()->AddComponent(high_score_component, GLVector2f(0.6f, 1.0f));
+	mGameDisplay->GetContainer()->AddComponent(high_score_component, GLVector2f(0.5f, 1.0f));
 
 	// Create a new GUILabel and wrap it up in a shared_ptr
 	mLivesLabel = make_shared<GUILabel>("Lives: 3");
@@ -287,22 +285,7 @@ void Asteroids::CreateGUI()
 
 }
 
-void OnHighScoreChanged(int high_score)
-{
-	// Create Highscore file
-	ofstream fw("highscore.txt", std::ofstream::out);
-	//check if file was successfully opened for writing
-	if (fw.is_open())
-	{
-		//store array contents to text file
-		for (int i = 0; i < 1; i++) {
-			fw << 1 << "\n";
-		}
-		fw.close();
-	}
-	else cout << "Problem with opening file";
-}
-
+int highscore;
 void Asteroids::OnScoreChanged(int score)
 {
 	// Format the score message using an string-based stream
@@ -312,10 +295,38 @@ void Asteroids::OnScoreChanged(int score)
 	std::string score_msg = msg_stream.str();
 	mScoreLabel->SetText(score_msg);
 
-	if (score > 0  /* this will be replaced by a variable representing the high score stored in the file */)
+	// Makes the highscore file if one doesn't exist already
+	char filename[] = "highscore.txt";
+	fstream file;
+	if (!file)
 	{
+		std::ofstream file("highscore.txt");
+	}
+
+	// Read from the text file
+	std::fstream f("highscore.txt");
+	if (f.is_open()) { // check whether the file is open
+		f >> highscore; // put file's content into variable
+	}
+	f.close();
+
+	if (score > highscore)
+	{
+		// Update high score in the file
+		f.open("highscore.txt", std::fstream::out);
+		f << score;
+		f.close();
+		// Update current high score in-game
 		std::ostringstream msg_stream;
 		msg_stream << "High Score: " << score;
+		std::string high_score_msg = msg_stream.str();
+		mHighScoreLabel->SetText(high_score_msg);
+	}
+	else
+	{
+		// Update current high score in-game
+		std::ostringstream msg_stream;
+		msg_stream << "High Score: " << highscore;
 		std::string high_score_msg = msg_stream.str();
 		mHighScoreLabel->SetText(high_score_msg);
 	}
