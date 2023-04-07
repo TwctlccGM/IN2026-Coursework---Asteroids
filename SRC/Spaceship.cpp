@@ -104,3 +104,15 @@ void Spaceship::OnCollision(const GameObjectList &objects)
 {
 	mWorld->FlagForRemoval(GetThisPtr());
 }
+
+void Spaceship::OnKeyPressed(uchar key, int x, int y)
+{
+	//switch (key)
+	//{
+	//case 'e':
+		mWorld->FlagForRemoval(GetThisPtr());
+	//	break;
+	//default:
+	//	break;
+	//}
+}

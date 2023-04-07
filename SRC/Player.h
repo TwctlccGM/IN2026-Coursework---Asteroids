@@ -11,7 +11,7 @@
 class Player : public IGameWorldListener
 {
 public:
-	Player() { mLives = 3; }
+	Player() { mLives = 4; }
 	virtual ~Player() {}
 
 	void OnWorldUpdated(GameWorld* world) {}

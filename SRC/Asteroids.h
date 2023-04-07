@@ -54,6 +54,8 @@ private:
 	shared_ptr<GUILabel> mGameOverLabel;
 	shared_ptr<GUILabel> mStartScreenLabel;
 	shared_ptr<GUILabel> mHighScoreLabel;
+	shared_ptr<GUILabel> mDemoLabel;
+	shared_ptr<GUILabel> mAsteroidsLabel;
 
 	uint mLevel;
 	uint mAsteroidCount;
@@ -67,7 +69,7 @@ private:
 	const static uint SHOW_GAME_OVER = 0;
 	const static uint START_NEXT_LEVEL = 1;
 	const static uint CREATE_NEW_PLAYER = 2;
-	const static uint SHOW_START_SCREEN = 3;
+	const static uint DEMO_AI = 3;
 
 	ScoreKeeper mScoreKeeper;
 	Player mPlayer;

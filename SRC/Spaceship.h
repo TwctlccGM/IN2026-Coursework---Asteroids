@@ -4,6 +4,13 @@
 #include "GameUtil.h"
 #include "GameObject.h"
 #include "Shape.h"
+#include "GameSession.h"
+#include "IKeyboardListener.h"
+#include "IGameWorldListener.h"
+#include "IScoreListener.h" 
+#include "ScoreKeeper.h"
+#include "Player.h"
+#include "IPlayerListener.h"
 
 class Spaceship : public GameObject
 {
@@ -27,12 +34,15 @@ public:
 	bool CollisionTest(shared_ptr<GameObject> o);
 	void OnCollision(const GameObjectList &objects);
 
+	void OnKeyPressed(uchar key, int x, int y);
+
 private:
 	float mThrust;
 
 	shared_ptr<Shape> mSpaceshipShape;
 	shared_ptr<Shape> mThrusterShape;
 	shared_ptr<Shape> mBulletShape;
+
 };
 
 #endif

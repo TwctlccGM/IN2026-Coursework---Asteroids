@@ -64,10 +64,16 @@ void Asteroids::Start()
 	// Create a spaceship and add it to the world
 	//mGameWorld->AddObject(CreateSpaceship());
 	// Create some asteroids and add them to the world
-	CreateAsteroids(10);
+	//CreateAsteroids(10);
 
 	//Create the GUI
 	CreateGUI();
+
+	// Hide certain GUI elements
+	mGameOverLabel->SetVisible(false);
+	mLivesLabel->SetVisible(false);
+	mScoreLabel->SetVisible(false);
+	mHighScoreLabel->SetVisible(false);
 
 	// Add a player (watcher) to the game world
 	mGameWorld->AddListener(&mPlayer);
@@ -89,18 +95,35 @@ void Asteroids::Stop()
 // PUBLIC INSTANCE METHODS IMPLEMENTING IKeyboardListener /////////////////////
 // This variable is needed to stop spaceship duplication in 'OnKeyPressed'
 int startScreenVariable = 0;
+int demoVariable = 0;
 void Asteroids::OnKeyPressed(uchar key, int x, int y)
 {
 	switch (key)
 	{
 	case ' ':
-		mSpaceship->Shoot();
+		if (startScreenVariable == 1)
+		{
+			mSpaceship->Shoot();
+		}
+		if (startScreenVariable == 0 && demoVariable == 0)
+		{
+			mGameWorld->AddObject(CreateSpaceship());
+			SetTimer(200, DEMO_AI);
+			demoVariable = 1;
+			mDemoLabel->SetVisible(false);
+		}
 		break;
 	case 'p':
 		if (startScreenVariable == 0)
 		{
+			CreateAsteroids(10);
 			mGameWorld->AddObject(CreateSpaceship());
 			mStartScreenLabel->SetVisible(false);
+			mDemoLabel->SetVisible(false);
+			mLivesLabel->SetVisible(true);
+			mScoreLabel->SetVisible(true);
+			mHighScoreLabel->SetVisible(true);
+			mAsteroidsLabel->SetVisible(false);
 			startScreenVariable = 1;
 		}
 		break;
@@ -113,32 +136,42 @@ void Asteroids::OnKeyReleased(uchar key, int x, int y) {}
 
 void Asteroids::OnSpecialKeyPressed(int key, int x, int y)
 {
-	switch (key)
+	if (startScreenVariable == 1)
 	{
-	// If up arrow key is pressed start applying forward thrust
-	case GLUT_KEY_UP: mSpaceship->Thrust(10); break;
-	// If left arrow key is pressed start rotating anti-clockwise
-	case GLUT_KEY_LEFT: mSpaceship->Rotate(90); break;
-	// If right arrow key is pressed start rotating clockwise
-	case GLUT_KEY_RIGHT: mSpaceship->Rotate(-90); break;
-	// Default case - do nothing
-	default: break;
+		switch (key)
+		{
+			// If up arrow key is pressed start applying forward thrust
+		case GLUT_KEY_UP: mSpaceship->Thrust(20); break;
+			// If down arrow key is pressed start applying backward thrust
+		case GLUT_KEY_DOWN: mSpaceship->Thrust(-20); break;
+			// If left arrow key is pressed start rotating anti-clockwise
+		case GLUT_KEY_LEFT: mSpaceship->Rotate(180); break;
+			// If right arrow key is pressed start rotating clockwise
+		case GLUT_KEY_RIGHT: mSpaceship->Rotate(-180); break;
+			// Default case - do nothing
+		default: break;
+		}
 	}
 }
 
 void Asteroids::OnSpecialKeyReleased(int key, int x, int y)
 {
-	switch (key)
+	if (startScreenVariable == 1)
 	{
-	// If up arrow key is released stop applying forward thrust
-	case GLUT_KEY_UP: mSpaceship->Thrust(0); break;
-	// If left arrow key is released stop rotating
-	case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
-	// If right arrow key is released stop rotating
-	case GLUT_KEY_RIGHT: mSpaceship->Rotate(0); break;
-	// Default case - do nothing
-	default: break;
-	} 
+		switch (key)
+		{
+			// If up arrow key is released stop applying forward thrust
+		case GLUT_KEY_UP: mSpaceship->Thrust(0); break;
+			// If down arrow key is released stop applying forward thrust
+		case GLUT_KEY_DOWN: mSpaceship->Thrust(0); break;
+			// If left arrow key is released stop rotating
+		case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
+			// If right arrow key is released stop rotating
+		case GLUT_KEY_RIGHT: mSpaceship->Rotate(0); break;
+			// Default case - do nothing
+		default: break;
+		} 
+	}
 }
 
 
@@ -161,7 +194,6 @@ void Asteroids::OnObjectRemoved(GameWorld* world, shared_ptr<GameObject> object)
 }
 
 // PUBLIC INSTANCE METHODS IMPLEMENTING ITimerListener ////////////////////////
-
 void Asteroids::OnTimer(int value)
 {
 	if (value == CREATE_NEW_PLAYER)
@@ -172,9 +204,12 @@ void Asteroids::OnTimer(int value)
 
 	if (value == START_NEXT_LEVEL)
 	{
-		mLevel++;
-		int num_asteroids = 10 + 2 * mLevel;
-		CreateAsteroids(num_asteroids);
+		if (startScreenVariable == 1)
+		{
+			mLevel++;
+			int num_asteroids = 10 + 2 * mLevel;
+			CreateAsteroids(num_asteroids);
+		}
 	}
 
 	if (value == SHOW_GAME_OVER)
@@ -182,11 +217,38 @@ void Asteroids::OnTimer(int value)
 		mGameOverLabel->SetVisible(true);
 	}
 
-	if (value == SHOW_START_SCREEN)
-	{
-		mStartScreenLabel->SetVisible(true);
-	}
 
+	// If the player has started the game, sSV will be equal to 1
+	// which disables the AI
+	if (startScreenVariable == 0)
+	{
+		if (value == DEMO_AI)
+		{
+			int i;
+			i = (rand() % 10);
+			if (i <= 6)
+			{
+				mSpaceship->Shoot();
+			}
+			if (i == 7)
+			{
+				mSpaceship->Thrust(10);
+			}
+			if (i == 8)
+			{
+				mSpaceship->Thrust(-10);
+			}
+			if (i == 9)
+			{
+				mSpaceship->Rotate(90);
+			}
+			if (i == 10)
+			{
+				mSpaceship->Rotate(-90);
+			}
+			SetTimer(500, DEMO_AI);
+		}
+	}
 }
 
 // PROTECTED INSTANCE METHODS /////////////////////////////////////////////////
@@ -227,6 +289,7 @@ void Asteroids::CreateAsteroids(const uint num_asteroids)
 	}
 }
 
+int highscore;
 void Asteroids::CreateGUI()
 {
 	// Add a (transparent) border around the edge of the game display
@@ -241,16 +304,25 @@ void Asteroids::CreateGUI()
 	mGameDisplay->GetContainer()->AddComponent(score_component, GLVector2f(0.0f, 1.0f));
 	
 	// Create a new GUILabel and wrap it up in a shared_ptr
-	mHighScoreLabel = make_shared<GUILabel>("High Score: Loading");
+	mHighScoreLabel = make_shared<GUILabel>("Highscore: Loading");
 	// Set the vertical alignment of the label to GUI_VALIGN_TOP
 	mHighScoreLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
 	// Add the GUILabel to the GUIComponent  
 	shared_ptr<GUIComponent> high_score_component
 		= static_pointer_cast<GUIComponent>(mHighScoreLabel);
-	mGameDisplay->GetContainer()->AddComponent(high_score_component, GLVector2f(0.5f, 1.0f));
+	mGameDisplay->GetContainer()->AddComponent(high_score_component, GLVector2f(0.55f, 1.0f));
 
 	// Create a new GUILabel and wrap it up in a shared_ptr
-	mLivesLabel = make_shared<GUILabel>("Lives: 3");
+	mAsteroidsLabel = make_shared<GUILabel>("ASTEROIDS");
+	// Set the vertical alignment of the label to GUI_VALIGN_TOP
+	mAsteroidsLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
+	// Add the GUILabel to the GUIComponent  
+	shared_ptr<GUIComponent> asteroids_component
+		= static_pointer_cast<GUIComponent>(mAsteroidsLabel);
+	mGameDisplay->GetContainer()->AddComponent(asteroids_component, GLVector2f(0.4f, 0.8f));
+
+	// Create a new GUILabel and wrap it up in a shared_ptr
+	mLivesLabel = make_shared<GUILabel>("Lives: 4");
 	// Set the vertical alignment of the label to GUI_VALIGN_BOTTOM
 	mLivesLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_BOTTOM);
 	// Add the GUILabel to the GUIComponent  
@@ -271,7 +343,7 @@ void Asteroids::CreateGUI()
 	mGameDisplay->GetContainer()->AddComponent(game_over_component, GLVector2f(0.5f, 0.5f));
 
 	// Create a new GUILabel and wrap it up in a shared_ptr
-	mStartScreenLabel = shared_ptr<GUILabel>(new GUILabel("Press P to start"));
+	mStartScreenLabel = shared_ptr<GUILabel>(new GUILabel("Press P to play"));
 	// Set the horizontal alignment of the label to GUI_HALIGN_CENTER
 	mStartScreenLabel->SetHorizontalAlignment(GUIComponent::GUI_HALIGN_CENTER);
 	// Set the vertical alignment of the label to GUI_VALIGN_MIDDLE
@@ -281,11 +353,23 @@ void Asteroids::CreateGUI()
 	// Add the GUILabel to the GUIContainer  
 	shared_ptr<GUIComponent> start_screen_component
 		= static_pointer_cast<GUIComponent>(mStartScreenLabel);
-	mGameDisplay->GetContainer()->AddComponent(start_screen_component, GLVector2f(0.5f, 0.5f));
+	mGameDisplay->GetContainer()->AddComponent(start_screen_component, GLVector2f(0.5f, 0.4f));
+
+	// Create a new GUILabel and wrap it up in a shared_ptr
+	mDemoLabel = shared_ptr<GUILabel>(new GUILabel("Press Space for Demo"));
+	// Set the horizontal alignment of the label to GUI_HALIGN_CENTER
+	mDemoLabel->SetHorizontalAlignment(GUIComponent::GUI_HALIGN_CENTER);
+	// Set the vertical alignment of the label to GUI_VALIGN_MIDDLE
+	mDemoLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_MIDDLE);
+	// Set the visibility of the label to true (visible)
+	mDemoLabel->SetVisible(true);
+	// Add the GUILabel to the GUIContainer  
+	shared_ptr<GUIComponent> demo_component
+		= static_pointer_cast<GUIComponent>(mDemoLabel);
+	mGameDisplay->GetContainer()->AddComponent(demo_component, GLVector2f(0.5f, 0.3f));
 
 }
 
-int highscore;
 void Asteroids::OnScoreChanged(int score)
 {
 	// Format the score message using an string-based stream
